@@ -291,3 +291,103 @@ st.altair_chart(bar, use_container_width=True)
 st.altair_chart(box, use_container_width=True)
 st.altair_chart(line_brand, use_container_width=True)
 
+# ------------------------- Overview (best/worst), Compare, Drill, Table -------------------------
+tab_overview, tab_compare, tab_drill, tab_table = st.tabs(["Overview", "Compare", "Drill‑down", "Table"])
+
+with tab_overview:
+    st.markdown("### 🏅 Per‑Year Picks (Most & Least Worth Buying)")
+    best, worst = best_worst_per_year(view, "ValueScore")
+    cols = [COL_YEAR, COL_BRAND, COL_MODEL, COL_PRICE, COL_MILEAGE, COL_ENGINE, "ValueScore"]
+    cols = [c for c in cols if c in best.columns]
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("**Best (per Year)**")
+        st.dataframe(best[cols], use_container_width=True)
+        st.download_button("⬇️ Download Best (CSV)", best[cols].to_csv(index=False).encode("utf-8"),
+                           file_name="best_worth_buying_per_year.csv")
+    with c2:
+        st.markdown("**Worst (per Year)**")
+        st.dataframe(worst[cols], use_container_width=True)
+        st.download_button("⬇️ Download Worst (CSV)", worst[cols].to_csv(index=False).encode("utf-8"),
+                           file_name="least_worth_buying_per_year.csv")
+
+with tab_compare:
+    st.markdown("### 🔁 Brand / Model Comparator")
+    brands_list = sorted(view[COL_BRAND].unique())
+    brand_a = st.selectbox("Brand A", options=brands_list, index=0)
+    models_a = sorted(view[view[COL_BRAND] == brand_a][COL_MODEL].unique())
+    model_a = st.selectbox("Model A", options=models_a, index=0)
+
+    brand_b = st.selectbox("Brand B", options=brands_list, index=min(1, len(brands_list)-1))
+    models_b = sorted(view[view[COL_BRAND] == brand_b][COL_MODEL].unique())
+    model_b = st.selectbox("Model B", options=models_b, index=0)
+
+    comp = view[
+        ((view[COL_BRAND] == brand_a) & (view[COL_MODEL] == model_a)) |
+        ((view[COL_BRAND] == brand_b) & (view[COL_MODEL] == model_b))
+    ].copy()
+
+    if comp.empty:
+        st.info("No matching rows for the selected pairs—adjust filters.")
+    else:
+        dist = alt.Chart(comp).transform_fold(
+            [COL_PRICE, COL_MILEAGE, "ValueScore"], as_=["Metric", "Value"]
+        ).mark_boxplot(size=40).encode(
+            x=alt.X("Metric:N", title="Metric"),
+            y=alt.Y("Value:Q"),
+            color=alt.Color(f"{COL_BRAND}:N"),
+            column=alt.Column(f"{COL_YEAR}:N", title="Year"),
+            tooltip=[COL_YEAR, COL_BRAND, COL_MODEL, "Metric", alt.Tooltip("Value:Q", format=",.2f")]
+        ).properties(height=250)
+        st.altair_chart(dist, use_container_width=True)
+
+with tab_drill:
+    st.markdown("### 🔎 Drill‑down")
+    drill_year = st.selectbox("Year", options=years, index=0)
+    drill_brand = st.selectbox("Brand", options=brands, index=0)
+    drill = view[(view[COL_YEAR] == drill_year) & (view[COL_BRAND] == drill_brand)].copy()
+
+    scatter = alt.Chart(drill).mark_circle(size=90, opacity=0.75).encode(
+        x=alt.X(f"{COL_MILEAGE}:Q", title="Mileage"),
+        y=alt.Y(f"{COL_PRICE}:Q", title="Price"),
+        color=alt.Color("ValueScore:Q", scale=alt.Scale(scheme="greenblue"), title="ValueScore"),
+        tooltip=[COL_MODEL, alt.Tooltip(COL_PRICE, format=",.0f", title="Price"),
+                 alt.Tooltip(COL_MILEAGE, format=",.0f", title="Mileage"),
+                 alt.Tooltip("ValueScore:Q", format=",.1f", title="ValueScore")]
+    ).interactive().properties(height=320)
+    st.altair_chart(scatter, use_container_width=True)
+
+    cols_show = [COL_ID, COL_YEAR, COL_BRAND, COL_MODEL, COL_PRICE, COL_MILEAGE, COL_ENGINE, COL_FUEL, COL_TRANS, COL_COND, "ValueScore"]
+    cols_show = [c for c in cols_show if c in drill.columns]
+    st.dataframe(drill[cols_show].sort_values(by=["ValueScore"], ascending=False), use_container_width=True)
+
+with tab_table:
+    st.markdown("### 🔢 Full Table & Export")
+    brand_filter = st.text_input("Brand contains", value="")
+    model_filter = st.text_input("Model/Trim contains", value="")
+    tview = view.copy()
+    if brand_filter.strip():
+        tview = tview[tview[COL_BRAND].str.contains(brand_filter, case=False, na=False)]
+    if model_filter.strip():
+        tview = tview[tview[COL_MODEL].str.contains(model_filter, case=False, na=False)]
+    show_cols = [COL_ID, COL_YEAR, COL_BRAND, COL_MODEL, COL_PRICE, COL_MILEAGE, COL_ENGINE, COL_FUEL, COL_TRANS, COL_COND, "ValueScore"]
+    show_cols = [c for c in show_cols if c in tview.columns]
+    st.dataframe(tview[show_cols].sort_values(by=[COL_YEAR, COL_BRAND, COL_MODEL]), use_container_width=True)
+
+    c1, c2 = st.columns(2)
+    c1.download_button("⬇️ Download current view (CSV)",
+                       tview[show_cols].to_csv(index=False).encode("utf-8"),
+                       file_name="car_portfolio_view.csv")
+    c2.download_button("⬇️ Download Model X rows only (CSV)",
+                       tview[tview[COL_BRAND]=="Tesla"][tview[COL_MODEL]=="Model X"][show_cols].to_csv(index=False).encode("utf-8"),
+                       file_name="modelx_rows.csv")
+
+# ------------------------- Footer -------------------------
+with st.expander("ℹ️ Notes", expanded=False):
+    st.markdown(f"""
+- Purged pre‑2016 **Tesla Model X** rows: **{removed_rows:,}** removed.
+- If `modelx_prices.csv` is present, we **override Model X absolute price** with the **US‑market absolute price** for that year.
+- We also display the **inflation‑adjusted** series if provided.
+- ValueScore is min‑max normalized within each **Year**:
+  - **Price** (Minimize), **Mileage** (Minimize), **Engine Size** (direction configurable).
+""")
