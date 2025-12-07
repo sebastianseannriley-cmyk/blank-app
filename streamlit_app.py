@@ -228,7 +228,7 @@ with st.expander("Data Housekeeping"):
         )
 
 # ------------------------- Model X & Model Y price panel (separate) -------------------------
-st.subheader("🟢 Tesla Model X & Model Y — US Market Prices (separate series)")
+st.subheader(" Tesla Model X — US Market Prices (separate series)")
 
 # Reload raw data just for this panel so we can access Model Y (removed from df elsewhere)
 try:
@@ -286,7 +286,7 @@ if raw_df is not None:
         # Chart: two distinct lines (Model X vs Model Y)
         m = xy_wide.melt(
             id_vars=[COL_YEAR],
-            value_vars=["Model X (USD)", "Model Y (USD)"],
+            value_vars=["Model X (USD)"],
             var_name="Series",
             value_name="PriceUSD"
         )
@@ -310,7 +310,7 @@ if raw_df is not None:
 
         cta, ctb = st.columns(2)
         with cta:
-            st.markdown("**Model X & Model Y price table (separate columns)**")
+            st.markdown("**Model X price table**")
             st.dataframe(xy_wide.rename(columns={COL_YEAR: "Year"}), use_container_width=True)
         with ctb:
             st.download_button(
