@@ -1,9 +1,9 @@
 
 # app.py
 # Interactive Streamlit dashboard tailored to data.csv:
-# Year → Brand → Model portfolio with interactive selections, comparator,
-# Model X override (absolute and inflation-adjusted prices), and purge of pre‑2016 Model X rows.
-# Drill-down and Table views are removed; Best/Worst is shown via a year slider (2000–2023).
+# Year → Brand → Model portfolio with filters, comparator,
+# Model X/Model Y handling (Model Y removed from table views; X chart shows X+Y),
+# Model X override (absolute & inflation-adjusted), and purge of pre‑2016 Model X rows.
 
 import os
 import numpy as np
@@ -13,13 +13,13 @@ import altair as alt
 
 # ------------------------- Page Config -------------------------
 st.set_page_config(
-    page_title="Car Price Portfolio (Interactive + Model X US Prices)",
+    page_title="Car Price Portfolio (Interactive + Model X/Y Fix)",
     page_icon="🚗",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ------------------------- Column Mapping (fixed to your CSV) -------------------------
+# ------------------------- Column Mapping -------------------------
 COL_ID = "Car ID"
 COL_BRAND = "Brand"
 COL_YEAR = "Year"
@@ -70,9 +70,14 @@ def load_data(path: str) -> pd.DataFrame:
     # --- Purge synthetic/incorrect Tesla Model X rows prior to 2016 ---
     pre_count = len(df)
     df = df[~((df[COL_BRAND] == "Tesla") & (df[COL_MODEL] == "Model X") & (df[COL_YEAR] < 2016))]
-    removed = pre_count - len(df)
+    removed_x_pre2016 = pre_count - len(df)
 
-    return df, removed
+    # 🔧 CHANGE: Remove all Tesla Model Y rows from the dataset (they won't appear in tables/charts)
+    pre_count2 = len(df)
+    df = df[~((df[COL_BRAND] == "Tesla") & (df[COL_MODEL] == "Model Y"))].copy()
+    removed_all_model_y = pre_count2 - len(df)
+
+    return df, removed_x_pre2016, removed_all_model_y
 
 def minmax_by_group(values: pd.Series, group_index: pd.Series) -> pd.Series:
     d = pd.DataFrame({"v": values, "g": group_index})
@@ -122,7 +127,7 @@ def currency(x) -> str:
 
 # ------------------------- Load base data & purge report -------------------------
 DATA_PATH = "data.csv"
-df, removed_rows = load_data(DATA_PATH)
+df, removed_x_pre2016, removed_all_model_y = load_data(DATA_PATH)
 
 # ------------------------- Optional Model X price override -------------------------
 # Expected file: modelx_prices.csv with columns:
@@ -141,22 +146,20 @@ if os.path.exists(MODELX_FILE):
     modelx_df = modelx_df[(modelx_df["Year"] >= 2016) & (modelx_df["Year"] <= 2023)]
 else:
     modelx_msg = (
-        "The original dataset for the Tesla Model X did not accurately model any absolute nor inflated prices "
-        "from 2000 - 2024; to account for this, external data was added."
+        "The original dataset for the Tesla Model X/Y did not accurately model absolute or inflation-adjusted prices; "
+        "to account for this, external data was added for Model X."
     )
 
 # Merge override series (left merge on Year for Tesla Model X only)
 if modelx_df is not None and not modelx_df.empty:
-    # Separate Model X and non-Model X
+    # NOTE: We already removed Model Y rows from df. We still override Model X prices where provided.
     non_x = df[~((df[COL_BRAND] == "Tesla") & (df[COL_MODEL] == "Model X"))].copy()
     x_rows = df[(df[COL_BRAND] == "Tesla") & (df[COL_MODEL] == "Model X")].copy()
 
     # Merge series onto Model X rows by Year
     x_rows = x_rows.merge(modelx_df, how="left", left_on=COL_YEAR, right_on="Year")
-    # If AbsolutePrice_USD present, use that to override Price (to keep the dataset consistent)
     x_rows.loc[~x_rows["AbsolutePrice_USD"].isna(), COL_PRICE] = x_rows["AbsolutePrice_USD"]
 
-    # Recombine
     df = pd.concat([non_x, x_rows.drop(columns=["Year"])], ignore_index=True)
 
 # ------------------------- Sidebar Controls -------------------------
@@ -201,7 +204,7 @@ view["ValueScore"] = build_value_score(view)
 
 # ------------------------- Title & KPIs -------------------------
 st.title("Vehicle Price Portfolio (Interactive)")
-st.caption("Fixed dataset: Year · Brand · Model/Trim · Price · Mileage · Engine Size · Fuel · Transmission · Condition")
+st.caption("Dataset: Year · Brand · Model/Trim · Price · Mileage · Engine Size · Fuel · Transmission · Condition")
 
 k1, k2, k3, k4, k5 = st.columns(5)
 k1.metric("Vehicles", f"{len(view):,}")
@@ -212,74 +215,153 @@ k5.metric("Top ValueScore", f"{np.nanmax(view['ValueScore']):.1f}")
 
 # Purge notice
 with st.expander("Data Housekeeping"):
-    st.markdown(f"- Purged **{removed_rows:,}** synthetic Tesla Model X rows (years < 2016).")
+    st.markdown(f"- Purged **{removed_x_pre2016:,}** synthetic Tesla Model X rows (years < 2016).")
+    st.markdown(f"- Removed **{removed_all_model_y:,}** Tesla Model Y rows from dataset (rolled into Model X chart).")
     if modelx_msg:
         st.warning(modelx_msg)
-    else:
+    elif modelx_df is not None:
         yrs = ", ".join([str(int(y)) for y in sorted(modelx_df["Year"].unique())])
         st.success(
             f"Loaded Model X US price series for years: {yrs}. "
             f"Absolute prices override base listing price for Model X."
         )
 
-# ------------------------- Model X price panel -------------------------
-st.subheader("🟢 Tesla Model X — US Market Prices (Absolute & Inflation‑Adjusted)")
-x_panel = df[(df[COL_BRAND] == "Tesla") & (df[COL_MODEL] == "Model X")].copy()
+# ------------------------- Model X(+Y) price panel -------------------------
+st.subheader("🟢 Tesla Model X chart (Model X + Model Y combined)")
+# 🔧 CHANGE: Build chart from original raw data (including Model Y), not from df where Y was removed.
+# We need X+Y combined series per year. If modelx_prices.csv is present, use AbsolutePrice_USD to override X rows only.
 
-# Build a compact series for plotting
-plot_df = x_panel[[COL_YEAR, COL_PRICE]].rename(columns={COL_PRICE: "AbsolutePrice_USD"}).copy()
-if "InflationAdjusted_USD" in x_panel.columns:
-    plot_df = plot_df.merge(
-        x_panel[[COL_YEAR, "InflationAdjusted_USD"]].drop_duplicates(COL_YEAR),
-        on=COL_YEAR, how="left"
+# Safely reload the raw CSV to access Model Y
+try:
+    raw_df = pd.read_csv(DATA_PATH)
+    # Clean typing
+    raw_df[COL_YEAR] = pd.to_numeric(raw_df[COL_YEAR], errors="coerce")
+    raw_df[COL_PRICE] = pd.to_numeric(raw_df[COL_PRICE], errors="coerce")
+    raw_df[COL_BRAND] = raw_df[COL_BRAND].astype(str).str.strip()
+    raw_df[COL_MODEL] = raw_df[COL_MODEL].astype(str).str.strip()
+except Exception:
+    raw_df = None
+    st.warning("Could not reload raw data for X+Y chart; showing Model X only from current view.")
+
+if raw_df is not None:
+    # Remove Model X < 2016, keep X 2016+ and all Y for combination
+    raw_xy = raw_df[
+        (raw_df[COL_BRAND] == "Tesla") &
+        (raw_df[COL_MODEL].isin(["Model X", "Model Y"]))
+    ].copy()
+    raw_xy = raw_xy[~((raw_xy[COL_MODEL] == "Model X") & (raw_xy[COL_YEAR] < 2016))]
+
+    # If modelx_prices.csv exists, override Model X prices
+    if modelx_df is not None and not modelx_df.empty:
+        mx = raw_xy[raw_xy[COL_MODEL] == "Model X"].copy()
+        mx = mx.merge(modelx_df, how="left", left_on=COL_YEAR, right_on="Year")
+        mx.loc[~mx["AbsolutePrice_USD"].isna(), COL_PRICE] = mx["AbsolutePrice_USD"]
+        mx = mx.drop(columns=["Year"])
+        my = raw_xy[raw_xy[COL_MODEL] == "Model Y"].copy()
+        raw_xy = pd.concat([mx, my], ignore_index=True)
+
+    # 🔧 CHANGE: Combine X + Y by year using mean price (you can switch to median if preferred)
+    comb = (
+        raw_xy.groupby(COL_YEAR, dropna=True)[COL_PRICE]
+        .mean()
+        .reset_index()
+        .rename(columns={COL_PRICE: "Combined_XY_USD"})
     )
+
+    # Optional inflation line: if modelx_df has InflationAdjusted_USD, we show it as Model X adjusted
+    if modelx_df is not None and "InflationAdjusted_USD" in modelx_df.columns:
+        infl = modelx_df[["Year", "InflationAdjusted_USD"]].rename(columns={"Year": COL_YEAR})
+        plot_df = comb.merge(infl, on=COL_YEAR, how="left")
+    else:
+        plot_df = comb.copy()
+        plot_df["InflationAdjusted_USD"] = np.nan
+
+    plot_df = plot_df.dropna(subset=[COL_YEAR]).sort_values(COL_YEAR)
+
+    if plot_df.empty:
+        st.info("No Model X/Y data available for chart.")
+    else:
+        m = plot_df.melt(
+            id_vars=[COL_YEAR],
+            value_vars=["Combined_XY_USD", "InflationAdjusted_USD"],
+            var_name="Series",
+            value_name="PriceUSD"
+        )
+
+        # Pretty names
+        m["Series"] = m["Series"].map({
+            "Combined_XY_USD": "Combined X + Y (avg)",
+            "InflationAdjusted_USD": "Model X (inflation‑adj)"
+        }).fillna("Series")
+
+        line_xy = (
+            alt.Chart(m)
+            .mark_line(point=True, interpolate="monotone")
+            .encode(
+                x=alt.X(f"{COL_YEAR}:O", title="Year"),
+                y=alt.Y("PriceUSD:Q", title="Price (USD)", axis=alt.Axis(format="~s")),
+                color=alt.Color("Series:N", title="Series", scale=alt.Scale(scheme="teals")),
+                tooltip=[
+                    alt.Tooltip(COL_YEAR, title="Year"),
+                    alt.Tooltip("Series:N", title="Series"),
+                    alt.Tooltip("PriceUSD:Q", format=",.0f", title="Price"),
+                ],
+            )
+            .properties(height=280)
+        )
+        st.altair_chart(line_xy, use_container_width=True)
+
+        cta, ctb = st.columns(2)
+        with cta:
+            st.markdown("**Combined (X + Y) price table**")
+            st.dataframe(
+                plot_df.rename(columns={
+                    "Combined_XY_USD": "Combined X+Y (USD)",
+                    "InflationAdjusted_USD": "Inflation‑adj (USD)"
+                }),
+                use_container_width=True
+            )
+        with ctb:
+            st.download_button(
+                "⬇️ Download X+Y series (CSV)",
+                plot_df.to_csv(index=False).encode("utf-8"),
+                file_name="tesla_model_x_plus_y_series.csv"
+            )
 else:
+    # Fallback: show Model X from filtered df only
+    x_panel = view[(view[COL_BRAND] == "Tesla") & (view[COL_MODEL] == "Model X")].copy()
+    plot_df = x_panel[[COL_YEAR, COL_PRICE]].rename(columns={COL_PRICE: "Combined_XY_USD"}).copy()
     plot_df["InflationAdjusted_USD"] = np.nan
-
-plot_df = plot_df.dropna(subset=[COL_YEAR]).drop_duplicates(COL_YEAR).sort_values(COL_YEAR)
-
-if plot_df.empty:
-    st.info("No Model X data available in the current filter.")
-else:
-    m = plot_df.melt(
-        id_vars=[COL_YEAR],
-        value_vars=["AbsolutePrice_USD", "InflationAdjusted_USD"],
-        var_name="Series",
-        value_name="PriceUSD"
-    )
-
-    line = (
-        alt.Chart(m)
-        .mark_line(point=True, interpolate="monotone")
-        .encode(
-            x=alt.X(f"{COL_YEAR}:O", title="Year"),
-            y=alt.Y("PriceUSD:Q", title="Price (USD)", axis=alt.Axis(format="~s")),
-            color=alt.Color("Series:N", title="Series", scale=alt.Scale(scheme="teals")),
-            tooltip=[alt.Tooltip(COL_YEAR, title="Year"),
-                     alt.Tooltip("Series:N", title="Series"),
-                     alt.Tooltip("PriceUSD:Q", format=",.0f", title="Price")]
+    plot_df = plot_df.dropna(subset=[COL_YEAR]).drop_duplicates(COL_YEAR).sort_values(COL_YEAR)
+    if plot_df.empty:
+        st.info("No Model X data available in the current filter.")
+    else:
+        m = plot_df.melt(
+            id_vars=[COL_YEAR],
+            value_vars=["Combined_XY_USD", "InflationAdjusted_USD"],
+            var_name="Series",
+            value_name="PriceUSD"
         )
-        .properties(height=280)
-    )
-
-    st.altair_chart(line, use_container_width=True)
-
-    cta, ctb = st.columns(2)
-    with cta:
-        st.markdown("**Model X price table**")
-        st.dataframe(
-            plot_df.rename(columns={
-                "AbsolutePrice_USD": "Absolute (USD)",
-                "InflationAdjusted_USD": "Inflation‑adj (USD)"
-            }),
-            use_container_width=True
+        m["Series"] = m["Series"].map({
+            "Combined_XY_USD": "Combined X + Y (avg)",
+            "InflationAdjusted_USD": "Model X (inflation‑adj)"
+        })
+        line = (
+            alt.Chart(m)
+            .mark_line(point=True, interpolate="monotone")
+            .encode(
+                x=alt.X(f"{COL_YEAR}:O", title="Year"),
+                y=alt.Y("PriceUSD:Q", title="Price (USD)", axis=alt.Axis(format="~s")),
+                color=alt.Color("Series:N", title="Series", scale=alt.Scale(scheme="teals")),
+                tooltip=[
+                    alt.Tooltip(COL_YEAR, title="Year"),
+                    alt.Tooltip("Series:N", title="Series"),
+                    alt.Tooltip("PriceUSD:Q", format=",.0f", title="Price"),
+                ],
+            )
+            .properties(height=280)
         )
-    with ctb:
-        st.download_button(
-            "⬇️ Download Model X price series (CSV)",
-            plot_df.to_csv(index=False).encode("utf-8"),
-            file_name="modelx_price_series.csv"
-        )
+        st.altair_chart(line, use_container_width=True)
 
 # ------------------------- Interactive charts -------------------------
 st.subheader("🗂️ Interactive Charts")
@@ -362,16 +444,13 @@ line_brand = (
 )
 st.altair_chart(line_brand, use_container_width=True)
 
-# ------------------------- Overview (Best/Worst via slider) & Compare ONLY -------------------------
+# ------------------------- Overview (Best/Worst via slider) & Compare -------------------------
 tab_overview, tab_compare = st.tabs(["Overview", "Compare"])
 
 with tab_overview:
     st.markdown("### 🏅 Per‑Year Picks (Most & Least Worth Buying)")
-
-    # Compute once from the current filtered view
     best, worst = best_worst_per_year(view, "ValueScore")
 
-    # Dragging year selector (2000–2023), not a table
     year_min, year_max = 2000, 2023
     selected_year = st.slider(
         "Drag to pick a year",
@@ -381,12 +460,10 @@ with tab_overview:
         step=1
     )
 
-    # Pull best & worst rows for the selected year
     best_row = best[best[COL_YEAR] == selected_year]
     worst_row = worst[worst[COL_YEAR] == selected_year]
 
     c1, c2 = st.columns(2)
-
     with c1:
         st.info("✅ **Most Worth Buying**")
         if not best_row.empty:
@@ -427,7 +504,6 @@ with tab_compare:
     if comp.empty:
         st.info("No matching rows for the selected pairs—adjust filters.")
     else:
-        # Safer reshape for Altair (avoid transform_fold type issues)
         cols_for_chart = [COL_YEAR, COL_BRAND, COL_MODEL, COL_PRICE, COL_MILEAGE, "ValueScore"]
         long = comp[cols_for_chart].melt(
             id_vars=[COL_YEAR, COL_BRAND, COL_MODEL],
@@ -479,8 +555,8 @@ with tab_compare:
 # ------------------------- Footer -------------------------
 with st.expander("ℹ️ Notes", expanded=False):
     st.markdown(
-        "- All Tesla Model X rows with Year < 2016 are removed as synthetic/incorrect.\n"
-        "- If `modelx_prices.csv` is present, absolute prices override Model X listing prices for those years.\n"
-        "- Best/Worst is shown via a year slider (2000–2023) instead of tables.\n"
-        "- Drill‑down and Table tabs are intentionally removed."
+        "- Removed **Tesla Model Y** rows from dataset (rolled into the Model X chart as X+Y combined).\n"
+        "- All Tesla Model X rows with Year < 2016 are removed.\n"
+        "- If `modelx_prices.csv` is present, it overrides Model X prices for those years.\n"
+        "- Best/Worst uses a year slider; Drill‑down and Table views are not included."
     )
