@@ -1,19 +1,22 @@
+# Car Price Portfolio (Streamlit)
 
-# 📈 Yearly Price Forecast by Category (Streamlit)
-
-A Streamlit app that ingests a CSV and predicts yearly price changes **per category** using Polynomial Regression (Ridge).  
-Works out of the box with datasets like cars (columns: `Brand`, `Model`, `Year`, `Price`, etc).
+An interactive portfolio of car prices organized by **Year** → **Brand**, with flexible categorization, charts, and a customizable **Value Score** that identifies the **Most** and **Least Worth Buying** vehicles per year.
 
 ## Features
-- Upload CSV; map `Year`, `Price`, and choose one or **multiple** category columns
-- Robust price aggregation (mean/median) and optional outlier capping (IQR)
-- YoY % change visualization
-- Per-category trend modeling & multi-year forecasts with confidence bands
-- Download forecast CSV
+- Upload CSV of vehicle listings (Year, Brand/Make, Model, Price, etc.).
+- Explore prices by **Year** and **Category** (e.g., Brand, Body, Fuel).
+- Interactive charts:
+  - Average price by category per year (bar chart).
+  - Price distribution per category per year (box plot).
+  - Average price trend by brand (line chart).
+- Custom **Value Score**:
+  - Pick numeric features (Price, Mileage, MPG, Horsepower, SafetyRating…).
+  - Set weights and directions (Minimize/Maximize).
+  - Per-year normalization and scoring.
+- Per-year **Most Worth Buying** and **Least Worth Buying** results.
+- Filters, tables, and **CSV exports**.
 
-## Quickstart
+## How to Run
 ```bash
-git clone https://github.com/your-username/price-forecast-app.git
-cd price-forecast-app
 pip install -r requirements.txt
 streamlit run app.py
