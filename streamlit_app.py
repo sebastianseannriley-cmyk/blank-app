@@ -13,7 +13,262 @@ import altair as alt
 # ------------------------- Page Config -------------------------
 st.set_page_config(
     page_title="Car Price Portfolio (Interactive + Model X US Prices)",
-    page_icon="🚗",
+    page_icon= st.image(<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Price Predictions</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .poster {
+            width: 100%;
+            max-width: 900px;
+            background: linear-gradient(to bottom, #2c3e50 0%, #1a252f 100%);
+            border-radius: 8px;
+            padding: 50px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            font-weight: 900;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            margin-bottom: 15px;
+        }
+
+        .divider {
+            width: 200px;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #e74c3c, transparent);
+            margin: 0 auto;
+        }
+
+        .truck-container {
+            margin: 50px 0;
+            padding: 40px;
+            background: linear-gradient(to bottom, #87ceeb 0%, #e0e0e0 70%, #666 100%);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .truck-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60%;
+            background: linear-gradient(to bottom, #87ceeb, #b0d4e3);
+            z-index: 0;
+        }
+
+        .truck {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 350px;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.6));
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2em;
+            }
+            
+            .poster {
+                padding: 30px 20px;
+            }
+
+            .truck {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="poster">
+        <div class="header">
+            <h1>Vehicle Price<br>Predictions</h1>
+            <div class="divider"></div>
+        </div>
+
+        <div class="truck-container">
+            <div class="truck">
+                <svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <!-- Gradients for realistic shading -->
+                        <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#c0392b;stop-opacity:1" />
+                            <stop offset="50%" style="stop-color:#e74c3c;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#922b21;stop-opacity:1" />
+                        </linearGradient>
+                        
+                        <linearGradient id="bedGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#a93226;stop-opacity:1" />
+                            <stop offset="50%" style="stop-color:#c0392b;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#7b241c;stop-opacity:1" />
+                        </linearGradient>
+
+                        <linearGradient id="roofGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#e74c3c;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#c0392b;stop-opacity:1" />
+                        </linearGradient>
+
+                        <radialGradient id="wheelGrad" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" style="stop-color:#1a1a1a;stop-opacity:1" />
+                            <stop offset="70%" style="stop-color:#0a0a0a;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#000000;stop-opacity:1" />
+                        </radialGradient>
+
+                        <linearGradient id="windowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#4a90a4;stop-opacity:0.9" />
+                            <stop offset="100%" style="stop-color:#1a3a4a;stop-opacity:1" />
+                        </linearGradient>
+
+                        <radialGradient id="rimGrad" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" style="stop-color:#c0c0c0;stop-opacity:1" />
+                            <stop offset="60%" style="stop-color:#808080;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#404040;stop-opacity:1" />
+                        </radialGradient>
+                    </defs>
+
+                    <!-- Ground shadow -->
+                    <ellipse cx="400" cy="340" rx="280" ry="25" fill="#000000" opacity="0.3"/>
+
+                    <!-- Truck Bed -->
+                    <path d="M 420 180 L 420 160 L 640 160 L 640 280 L 630 280 L 630 190 L 430 190 L 430 280 L 420 280 Z" 
+                          fill="url(#bedGrad)" stroke="#7b241c" stroke-width="2"/>
+                    
+                    <!-- Bed vertical lines -->
+                    <line x1="480" y1="160" x2="480" y2="280" stroke="#7b241c" stroke-width="2"/>
+                    <line x1="530" y1="160" x2="530" y2="280" stroke="#7b241c" stroke-width="2"/>
+                    <line x1="580" y1="160" x2="580" y2="280" stroke="#7b241c" stroke-width="2"/>
+                    
+                    <!-- Bed gate handle -->
+                    <rect x="620" y="220" width="15" height="8" fill="#2c2c2c" rx="2"/>
+                    
+                    <!-- Main Body -->
+                    <rect x="180" y="200" width="260" height="80" fill="url(#bodyGrad)" stroke="#7b241c" stroke-width="2" rx="3"/>
+                    
+                    <!-- Cabin/Roof -->
+                    <path d="M 200 200 L 240 140 L 410 140 L 440 180 L 440 200 Z" 
+                          fill="url(#roofGrad)" stroke="#7b241c" stroke-width="2"/>
+                    
+                    <!-- Front windshield -->
+                    <path d="M 205 198 L 245 145 L 360 145 L 360 198 Z" 
+                          fill="url(#windowGrad)" stroke="#1a3a4a" stroke-width="2"/>
+                    
+                    <!-- Side window -->
+                    <path d="M 370 145 L 430 145 L 435 180 L 435 198 L 370 198 Z" 
+                          fill="url(#windowGrad)" stroke="#1a3a4a" stroke-width="2"/>
+                    
+                    <!-- Window highlights -->
+                    <path d="M 250 150 L 350 150 L 350 160 L 255 160 Z" 
+                          fill="#ffffff" opacity="0.3"/>
+                    <path d="M 375 150 L 425 150 L 428 170 L 375 170 Z" 
+                          fill="#ffffff" opacity="0.3"/>
+
+                    <!-- Front bumper -->
+                    <rect x="145" y="210" width="40" height="60" fill="#2c2c2c" rx="4"/>
+                    <rect x="150" y="215" width="30" height="50" fill="#1a1a1a" rx="2"/>
+                    
+                    <!-- Grille -->
+                    <rect x="155" y="220" width="20" height="40" fill="#0a0a0a"/>
+                    <line x1="155" y1="230" x2="175" y2="230" stroke="#2c2c2c" stroke-width="1"/>
+                    <line x1="155" y1="240" x2="175" y2="240" stroke="#2c2c2c" stroke-width="1"/>
+                    <line x1="155" y1="250" x2="175" y2="250" stroke="#2c2c2c" stroke-width="1"/>
+                    
+                    <!-- Headlights -->
+                    <circle cx="160" cy="205" r="10" fill="#ffd700" opacity="0.9" filter="blur(1px)"/>
+                    <circle cx="160" cy="205" r="8" fill="#ffed4e"/>
+                    
+                    <circle cx="160" cy="270" r="10" fill="#ff4500" opacity="0.7"/>
+                    <circle cx="160" cy="270" r="7" fill="#ff6347"/>
+                    
+                    <!-- Side mirror -->
+                    <rect x="190" y="170" width="15" height="4" fill="#1a1a1a"/>
+                    <path d="M 205 168 L 215 165 L 215 177 L 205 174 Z" fill="#1a3a4a" opacity="0.6"/>
+                    
+                    <!-- Door handle -->
+                    <rect x="330" y="235" width="25" height="6" fill="#1a1a1a" rx="3"/>
+                    
+                    <!-- Door line -->
+                    <line x1="290" y1="200" x2="290" y2="280" stroke="#7b241c" stroke-width="2"/>
+
+                    <!-- Toyota badge area -->
+                    <ellipse cx="165" cy="240" rx="12" ry="10" fill="#c0c0c0" opacity="0.9"/>
+                    <text x="165" y="244" font-family="Arial, sans-serif" font-size="10" font-weight="bold" 
+                          fill="#c0392b" text-anchor="middle">T</text>
+
+                    <!-- Rear wheel -->
+                    <circle cx="560" cy="280" r="45" fill="url(#wheelGrad)"/>
+                    <circle cx="560" cy="280" r="36" fill="url(#rimGrad)"/>
+                    <circle cx="560" cy="280" r="15" fill="#2c2c2c"/>
+                    
+                    <!-- Rear wheel spokes -->
+                    <line x1="560" y1="244" x2="560" y2="316" stroke="#505050" stroke-width="3"/>
+                    <line x1="524" y1="280" x2="596" y2="280" stroke="#505050" stroke-width="3"/>
+                    <line x1="535" y1="255" x2="585" y2="305" stroke="#505050" stroke-width="2"/>
+                    <line x1="535" y1="305" x2="585" y2="255" stroke="#505050" stroke-width="2"/>
+
+                    <!-- Front wheel -->
+                    <circle cx="260" cy="280" r="45" fill="url(#wheelGrad)"/>
+                    <circle cx="260" cy="280" r="36" fill="url(#rimGrad)"/>
+                    <circle cx="260" cy="280" r="15" fill="#2c2c2c"/>
+                    
+                    <!-- Front wheel spokes -->
+                    <line x1="260" y1="244" x2="260" y2="316" stroke="#505050" stroke-width="3"/>
+                    <line x1="224" y1="280" x2="296" y2="280" stroke="#505050" stroke-width="3"/>
+                    <line x1="235" y1="255" x2="285" y2="305" stroke="#505050" stroke-width="2"/>
+                    <line x1="235" y1="305" x2="285" y2="255" stroke="#505050" stroke-width="2"/>
+
+                    <!-- Wheel well shadows -->
+                    <path d="M 215 280 Q 260 260 305 280" fill="none" stroke="#000000" stroke-width="2" opacity="0.3"/>
+                    <path d="M 515 280 Q 560 260 605 280" fill="none" stroke="#000000" stroke-width="2" opacity="0.3"/>
+
+                    <!-- Body highlights -->
+                    <rect x="185" y="205" width="250" height="8" fill="#ffffff" opacity="0.2" rx="2"/>
+                    <path d="M 205 202 L 245 145 L 255 145 L 210 202 Z" fill="#ffffff" opacity="0.3"/>
+
+                    <!-- Side body line detail -->
+                    <line x1="180" y1="240" x2="440" y2="240" stroke="#922b21" stroke-width="1.5"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+</body>
+</html>),
     layout="wide",
     initial_sidebar_state="expanded",
 )
