@@ -382,12 +382,3 @@ with tab_table:
                        tview[tview[COL_BRAND]=="Tesla"][tview[COL_MODEL]=="Model X"][show_cols].to_csv(index=False).encode("utf-8"),
                        file_name="modelx_rows.csv")
 
-# ------------------------- Footer -------------------------
-with st.expander("ℹ️ Notes", expanded=False):
-    st.markdown(f"""
-- Purged pre‑2016 **Tesla Model X** rows: **{removed_rows:,}** removed.
-- If `modelx_prices.csv` is present, we **override Model X absolute price** with the **US‑market absolute price** for that year.
-- We also display the **inflation‑adjusted** series if provided.
-- ValueScore is min‑max normalized within each **Year**:
-  - **Price** (Minimize), **Mileage** (Minimize), **Engine Size** (direction configurable).
-""")
