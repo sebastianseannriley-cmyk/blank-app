@@ -137,9 +137,7 @@ if os.path.exists(MODELX_FILE):
     # Only years 2016..2023
     modelx_df = modelx_df[(modelx_df["Year"] >= 2016) & (modelx_df["Year"] <= 2023)]
 else:
-    modelx_msg = ("`modelx_prices.csv` not found. "
-                  "Add it next to app.py with columns: Year, AbsolutePrice_USD, InflationAdjusted_USD "
-                  "(years 2016–2023).")
+    modelx_msg = ("The original dataset for the Tesla Model X did not accurately model any absolute nor inflated prices from 2000 - 2024; to account for this, external data was added.")
 
 # Merge override series (left merge on Year for Tesla Model X only)
 if modelx_df is not None and not modelx_df.empty:
