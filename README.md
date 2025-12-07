@@ -1,19 +1,24 @@
-# 🎈 Blank app template
 
-A simple Streamlit app template for you to modify!
+# 📈 Category Price Forecast (Streamlit)
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://blank-app-template.streamlit.app/)
+A Streamlit app that ingests a CSV and predicts yearly price changes per category using polynomial regression (Ridge).
 
-### How to run it on your own machine
+## Features
+- Upload CSV; map date/year, category, and price columns
+- Automatic year parsing from dates or strings
+- Year×Category aggregation (mean/median)
+- YoY % change visualization
+- Per-category modeling & forecasts with confidence bands
+- Download forecast CSV
 
-1. Install the requirements
+## Quickstart
+```bash
+# Clone and enter the repo
+git clone https://github.com/your-username/price-forecast-app.git
+cd price-forecast-app
 
-   ```
-   $ pip install -r requirements.txt
-   ```
+# Install dependencies
+pip install -r requirements.txt
 
-2. Run the app
-
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+# Run
+streamlit run app.py
