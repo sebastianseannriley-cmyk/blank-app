@@ -188,7 +188,7 @@ view = view[(view[COL_PRICE] >= price_sel[0]) & (view[COL_PRICE] <= price_sel[1]
 view["ValueScore"] = build_value_score(view)
 
 # ------------------------- Title & KPIs -------------------------
-st.title("🚗 Car Price Portfolio (Interactive + Model X US Prices)")
+st.title("Vehicle Price Portfolio (Interactive)")
 st.caption("Fixed dataset: Year · Brand · Model/Trim · Price · Mileage · Engine Size · Fuel · Transmission · Condition")
 
 k1, k2, k3, k4, k5 = st.columns(5)
@@ -199,7 +199,7 @@ k4.metric("Median Mileage", f"{np.nanmedian(view[COL_MILEAGE]):,.0f}")
 k5.metric("Top ValueScore", f"{np.nanmax(view['ValueScore']):.1f}")
 
 # Purge notice
-with st.expander("ℹ️ Data housekeeping", expanded=False):
+with st.expander("ℹ️ Data Housekeeping", "The original data for the Tesla Model X from 2000 - 2024 is synthetic. In order to fix this, external data was added, and is highlighted here in the beginning of the portfolio, to account for this."):
     st.markdown(f"- Purged **{removed_rows:,}** synthetic Tesla Model X rows (years < 2016).")
     if modelx_msg:
         st.warning(modelx_msg)
