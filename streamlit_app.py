@@ -13,7 +13,6 @@ import altair as alt
 # ------------------------- Page Config -------------------------
 st.set_page_config(
     page_title="Car Price Portfolio (Interactive + Model X US Prices)",
-    picsure= st.image("picsure.jpg",caption="Picture produced by ClaudeAI")
     layout="wide",
     initial_sidebar_state="expanded",
 )
