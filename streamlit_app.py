@@ -487,5 +487,5 @@ with st.expander("ℹ️ Notes", expanded=False):
     st.markdown(
         "- Removed **Tesla Model Y** rows globally (not shown in any view/panel).\n"
         "- Purged **Tesla Model X** rows with Year < 2016; optional Model X override applies when provided.\n"
-        "- Best/Worst uses a year slider; Drill‑down and Table tabs are intentionally removed."
+        "- Data is synthetic and may not represent an accurate modeling of actual prices during a certain time period."
     )
