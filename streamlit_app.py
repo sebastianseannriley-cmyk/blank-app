@@ -253,7 +253,7 @@ else:
 
 # ------------------------- Existing interactive charts -------------------------
 # (Same as your interactive build — bar, box, trend)
-st.subheader("Interactive Charts *changes are made through the filter sidebar*")
+st.subheader("*Interactive Charts (changes are made through the filter sidebar)*")
 # Aggregates for charts
 chart_df = view.copy()
 chart_df[COL_BRAND] = chart_df[COL_BRAND].astype(str)
