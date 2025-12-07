@@ -11,6 +11,7 @@ import streamlit as st
 import altair as alt
 
 # ------------------------- Page Config -------------------------
+st.image("picsure.jpg")
 st.set_page_config(
     page_title="Car Price Portfolio (Interactive + Model X US Prices)",
     layout="wide",
