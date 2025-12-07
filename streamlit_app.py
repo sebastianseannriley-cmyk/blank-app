@@ -199,7 +199,7 @@ k4.metric("Median Mileage", f"{np.nanmedian(view[COL_MILEAGE]):,.0f}")
 k5.metric("Top ValueScore", f"{np.nanmax(view['ValueScore']):.1f}")
 
 # Purge notice
-with st.expander("ℹ️ Data Housekeeping", "The original data for the Tesla Model X from 2000 - 2024 is synthetic. In order to fix this, external data was added, and is highlighted here in the beginning of the portfolio, to account for this."):
+with st.expander("ℹ️ Data Housekeeping"):
     st.markdown(f"- Purged **{removed_rows:,}** synthetic Tesla Model X rows (years < 2016).")
     if modelx_msg:
         st.warning(modelx_msg)
