@@ -1,24 +1,19 @@
 
-# 📈 Category Price Forecast (Streamlit)
+# 📈 Yearly Price Forecast by Category (Streamlit)
 
-A Streamlit app that ingests a CSV and predicts yearly price changes per category using polynomial regression (Ridge).
+A Streamlit app that ingests a CSV and predicts yearly price changes **per category** using Polynomial Regression (Ridge).  
+Works out of the box with datasets like cars (columns: `Brand`, `Model`, `Year`, `Price`, etc).
 
 ## Features
-- Upload CSV; map date/year, category, and price columns
-- Automatic year parsing from dates or strings
-- Year×Category aggregation (mean/median)
+- Upload CSV; map `Year`, `Price`, and choose one or **multiple** category columns
+- Robust price aggregation (mean/median) and optional outlier capping (IQR)
 - YoY % change visualization
-- Per-category modeling & forecasts with confidence bands
+- Per-category trend modeling & multi-year forecasts with confidence bands
 - Download forecast CSV
 
 ## Quickstart
 ```bash
-# Clone and enter the repo
 git clone https://github.com/your-username/price-forecast-app.git
 cd price-forecast-app
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Run
 streamlit run app.py
